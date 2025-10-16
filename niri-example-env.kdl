@@ -1,0 +1,34 @@
+// NVIDIA Environment Variables for Niri
+// Add this environment block to your ~/.config/niri/config.kdl
+
+environment {
+    LD_PRELOAD ""
+    MOZ_ENABLE_WAYLAND "1"
+    XDG_SESSION_TYPE "wayland"
+    XDG_CURRENT_DESKTOP "niri"
+    XDG_SESSION_DESKTOP "niri"
+    MOZ_DBUS_REMOTE "1"
+    GDK_BACKEND "wayland"
+    QT_AUTO_SCREEN_SCALE_FACTOR "1"
+    QT_WAYLAND_FORCE_DPI "physical"
+    EGL_PLATFORM "wayland"
+    CLUTTER_BACKEND "wayland"
+    TERM "kitty"
+    TERMINAL "kitty"
+    _JAVA_AWT_WM_NONREPARENTING "1"
+    ELECTRON_OZONE_PLATFORM_HINT "auto"
+    QT_QPA_PLATFORMTHEME "qt6ct"
+    GSK_RENDERER "ngl"
+    
+    // NVIDIA specific optimizations
+    NVD_BACKEND "direct"
+    LIBVA_DRIVER_NAME "nvidia"
+    GBM_BACKEND "nvidia-drm"
+    VDPAU_DRIVER "nvidia"
+    __GLX_VENDOR_LIBRARY_NAME "nvidia"
+    __GL_VRR_ALLOWED "1"
+    __GL_GSYNC_ALLOWED "1"
+    __GL_SHADER_DISK_CACHE_SKIP_CLEANUP "1"
+    __GL_YIELD "USLEEP"
+    __EGL_VENDOR_LIBRARY_FILENAMES "/usr/share/glvnd/egl_vendor.d/10_nvidia.json"
+}
