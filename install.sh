@@ -68,7 +68,7 @@ install_packages() {
                 PACKAGES="nvidia-settings opencl-nvidia lib32-opencl-nvidia \
                          libva-nvidia-driver libva-utils vdpauinfo \
                          vulkan-icd-loader lib32-vulkan-icd-loader \
-                         libvdpau lib32-libvdpau"
+                         libvdpau lib32-libvdpau egl-wayland"
             else
                 # Detect GPU and choose driver
                 detect_gpu
@@ -86,7 +86,7 @@ install_packages() {
                          nvidia-settings opencl-nvidia lib32-opencl-nvidia \
                          libva-nvidia-driver libva-utils vdpauinfo \
                          vulkan-icd-loader lib32-vulkan-icd-loader \
-                         libvdpau lib32-libvdpau"
+                         libvdpau lib32-libvdpau egl-wayland"
             fi
             
             # Install packages

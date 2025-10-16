@@ -34,6 +34,9 @@ sudo pacman -S vulkan-icd-loader lib32-vulkan-icd-loader
 
 # Video acceleration
 sudo pacman -S libvdpau lib32-libvdpau
+
+# Wayland EGL support
+sudo pacman -S egl-wayland
 ```
 
 **For older GPUs (GTX 10 series and older):**
@@ -52,6 +55,9 @@ sudo pacman -S vulkan-icd-loader lib32-vulkan-icd-loader
 
 # Video acceleration
 sudo pacman -S libvdpau lib32-libvdpau
+
+# Wayland EGL support
+sudo pacman -S egl-wayland
 ```
 
 **Note:** CUDA is intentionally excluded as it's large (~4GB), can conflict with other packages, and is only needed for AI/ML workloads. If you need CUDA, install it separately with `sudo pacman -S cuda cuda-tools`.
@@ -62,6 +68,7 @@ sudo pacman -S libvdpau lib32-libvdpau
 - `libva-nvidia-driver` - Hardware video acceleration (VA-API)
 - `vdpauinfo` / `libvdpau` - Video decode acceleration (VDPAU)
 - `vulkan-icd-loader` - Vulkan API for gaming
+- `egl-wayland` - EGL external platform for Wayland (essential for Wayland compositors)
 
 ### 2. Clone and Run the Installer
 ```bash
