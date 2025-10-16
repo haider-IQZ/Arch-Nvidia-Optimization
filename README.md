@@ -17,9 +17,14 @@ Based on PikaOS NVIDIA optimizations for Wayland compositors
 **The installer script handles everything automatically!**
 
 ### 1. Install NVIDIA Drivers (if not already installed)
+
+**For newer GPUs (RTX 20 series and newer - RECOMMENDED):**
 ```bash
-sudo pacman -S nvidia nvidia-utils lib32-nvidia-utils
-# OR for DKMS (recommended for custom kernels):
+sudo pacman -S nvidia-open-dkms nvidia-utils lib32-nvidia-utils
+```
+
+**For older GPUs (GTX 10 series and older):**
+```bash
 sudo pacman -S nvidia-dkms nvidia-utils lib32-nvidia-utils
 ```
 
