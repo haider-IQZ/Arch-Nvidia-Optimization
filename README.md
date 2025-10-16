@@ -12,7 +12,9 @@ Based on PikaOS NVIDIA optimizations for Wayland compositors
 - NVIDIA GPU (RTX 20 series or newer recommended)
 - NVIDIA proprietary drivers installed (`nvidia` or `nvidia-dkms`)
 
-## Installation
+## Quick Installation (Recommended)
+
+**The installer script handles everything automatically!**
 
 ### 1. Install NVIDIA Drivers (if not already installed)
 ```bash
@@ -21,18 +23,36 @@ sudo pacman -S nvidia nvidia-utils lib32-nvidia-utils
 sudo pacman -S nvidia-dkms nvidia-utils lib32-nvidia-utils
 ```
 
-### 2. Apply Kernel Module Parameters
-Copy the modprobe configuration:
+### 2. Clone and Run the Installer
 ```bash
-sudo cp nvidia.conf /etc/modprobe.d/nvidia.conf
+git clone https://github.com/haider-IQZ/Arch-Nvidia-Optimization.git
+cd Arch-Nvidia-Optimization
+chmod +x install.sh
+./install.sh
 ```
 
-Regenerate initramfs:
+The installer will:
+- ✅ Copy kernel module parameters to `/etc/modprobe.d/`
+- ✅ Regenerate initramfs automatically
+- ✅ Install compositor configuration (Hyprland/Niri)
+- ✅ Offer to reboot when done
+
+### 3. Reboot
+The installer will ask if you want to reboot. Say yes!
+
+---
+
+## Manual Installation (Advanced)
+
+If you prefer to install manually or want to customize:
+
+### 1. Apply Kernel Module Parameters
 ```bash
+sudo cp nvidia.conf /etc/modprobe.d/nvidia.conf
 sudo mkinitcpio -P
 ```
 
-### 3. Configure Your Wayland Compositor
+### 2. Configure Your Wayland Compositor
 
 #### For Hyprland:
 ```bash
@@ -42,14 +62,12 @@ cp hyprland-nvidia-env.conf ~/.config/hypr/env.conf
 Or if you already have `env.conf`, append the contents to your existing file.
 
 #### For Niri:
-The environment variables are already in the example `niri-config.kdl`.
-Copy the `environment` block to your `~/.config/niri/config.kdl`
+Copy the `environment` block from `niri-example-env.kdl` to your `~/.config/niri/config.kdl`
 
 #### For Sway/River/Other:
-Add the environment variables to your shell profile or compositor config.
-See `shell-env-vars.sh` for the list.
+Add the environment variables from `shell-env-vars.sh` to your shell profile or compositor config.
 
-### 4. Reboot
+### 3. Reboot
 ```bash
 reboot
 ```
