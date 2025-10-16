@@ -16,27 +16,187 @@ if [ "$EUID" -eq 0 ]; then
     exit 1
 fi
 
-# Check if NVIDIA drivers are installed
-if ! command -v nvidia-smi &> /dev/null; then
-    echo "WARNING: nvidia-smi not found. NVIDIA drivers may not be installed."
-    read -p "Continue anyway? (y/N): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
+# Detect GPU generation
+detect_gpu() {
+    if command -v nvidia-smi &> /dev/null; then
+        GPU_NAME=$(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | head -1)
+        echo "Detected GPU: $GPU_NAME"
+        
+        # Simple detection based on name
+        if echo "$GPU_NAME" | grep -qE "(RTX [2-4][0-9]|RTX [5-9][0-9]|A[0-9]{3,4})"; then
+            echo "This is a newer GPU (RTX 20+ series)"
+            return 0
+        else
+            echo "This is an older GPU (GTX series or older)"
+            return 1
+        fi
+    else
+        echo "Could not detect GPU. nvidia-smi not found."
+        return 2
     fi
-fi
+}
 
-echo "Step 1: Installing kernel module parameters..."
+# Package installation function
+install_packages() {
+    echo ""
+    echo "======================================"
+    echo "Step 1: NVIDIA Package Installation"
+    echo "======================================"
+    echo ""
+    
+    # Check if drivers already installed
+    if command -v nvidia-smi &> /dev/null; then
+        echo "NVIDIA drivers already installed."
+        read -p "Reinstall/upgrade packages? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Skipping package installation."
+            return
+        fi
+    fi
+    
+    echo "Choose installation mode:"
+    echo "1) Full installation (all packages including CUDA)"
+    echo "2) Custom installation (choose what to install)"
+    echo "3) Skip package installation"
+    read -p "Enter choice (1-3): " install_choice
+    
+    case $install_choice in
+        1)
+            echo ""
+            echo "Installing ALL NVIDIA packages..."
+            
+            # Detect GPU and choose driver
+            detect_gpu
+            GPU_TYPE=$?
+            
+            if [ $GPU_TYPE -eq 0 ]; then
+                DRIVER="nvidia-open-dkms"
+            else
+                DRIVER="nvidia-dkms"
+            fi
+            
+            echo "Using driver: $DRIVER"
+            
+            # Install everything
+            sudo pacman -S --needed \
+                $DRIVER nvidia-utils lib32-nvidia-utils \
+                nvidia-settings opencl-nvidia lib32-opencl-nvidia \
+                libva-nvidia-driver libva-utils vdpauinfo \
+                vulkan-icd-loader lib32-vulkan-icd-loader \
+                libvdpau lib32-libvdpau \
+                cuda cuda-tools
+            
+            echo "✓ All packages installed"
+            ;;
+            
+        2)
+            echo ""
+            echo "Custom installation mode"
+            echo ""
+            
+            # Detect GPU and choose driver
+            detect_gpu
+            GPU_TYPE=$?
+            
+            if [ $GPU_TYPE -eq 0 ]; then
+                DRIVER="nvidia-open-dkms"
+            elif [ $GPU_TYPE -eq 1 ]; then
+                DRIVER="nvidia-dkms"
+            else
+                echo "Choose driver:"
+                echo "1) nvidia-open-dkms (RTX 20+ series)"
+                echo "2) nvidia-dkms (GTX 10 series and older)"
+                read -p "Enter choice (1-2): " driver_choice
+                if [ "$driver_choice" = "1" ]; then
+                    DRIVER="nvidia-open-dkms"
+                else
+                    DRIVER="nvidia-dkms"
+                fi
+            fi
+            
+            # Core drivers (mandatory)
+            echo "Installing core drivers..."
+            sudo pacman -S --needed $DRIVER nvidia-utils lib32-nvidia-utils
+            
+            # NVIDIA Settings
+            read -p "Install nvidia-settings (GUI configuration tool)? (Y/n): " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+                sudo pacman -S --needed nvidia-settings
+            fi
+            
+            # OpenCL
+            read -p "Install OpenCL support (for compute tasks)? (Y/n): " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+                sudo pacman -S --needed opencl-nvidia lib32-opencl-nvidia
+            fi
+            
+            # Video acceleration
+            read -p "Install video acceleration (VA-API/VDPAU)? (Y/n): " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+                sudo pacman -S --needed libva-nvidia-driver libva-utils vdpauinfo libvdpau lib32-libvdpau
+            fi
+            
+            # Vulkan
+            read -p "Install Vulkan support (for gaming)? (Y/n): " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+                sudo pacman -S --needed vulkan-icd-loader lib32-vulkan-icd-loader
+            fi
+            
+            # CUDA
+            read -p "Install CUDA (for AI/ML - large download)? (y/N): " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                sudo pacman -S --needed cuda cuda-tools
+            fi
+            
+            echo "✓ Custom packages installed"
+            ;;
+            
+        3)
+            echo "Skipping package installation."
+            if ! command -v nvidia-smi &> /dev/null; then
+                echo "WARNING: NVIDIA drivers not detected!"
+                read -p "Continue anyway? (y/N): " -n 1 -r
+                echo
+                if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                    exit 1
+                fi
+            fi
+            ;;
+            
+        *)
+            echo "Invalid choice. Skipping package installation."
+            ;;
+    esac
+}
+
+# Run package installation
+install_packages
+
+echo ""
+echo "======================================"
+echo "Step 2: Kernel Module Configuration"
+echo "======================================"
+echo ""
+echo "Installing kernel module parameters..."
 sudo cp nvidia.conf /etc/modprobe.d/nvidia.conf
 echo "✓ Copied nvidia.conf to /etc/modprobe.d/"
 
 echo ""
-echo "Step 2: Regenerating initramfs..."
+echo "Regenerating initramfs..."
 sudo mkinitcpio -P
 echo "✓ Initramfs regenerated"
 
 echo ""
-echo "Step 3: Compositor configuration..."
+echo "======================================"
+echo "Step 3: Compositor Configuration"
+echo "======================================"
+echo ""
 echo "Which compositor do you use?"
 echo "1) Hyprland"
 echo "2) Niri"
