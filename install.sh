@@ -52,7 +52,7 @@ install_packages() {
     fi
     
     echo "Choose installation mode:"
-    echo "1) Full installation (all packages including CUDA)"
+    echo "1) Full installation (all gaming/desktop packages)"
     echo "2) Custom installation (choose what to install)"
     echo "3) Skip package installation"
     read -p "Enter choice (1-3): " install_choice
@@ -68,8 +68,7 @@ install_packages() {
                 PACKAGES="nvidia-settings opencl-nvidia lib32-opencl-nvidia \
                          libva-nvidia-driver libva-utils vdpauinfo \
                          vulkan-icd-loader lib32-vulkan-icd-loader \
-                         libvdpau lib32-libvdpau \
-                         cuda cuda-tools"
+                         libvdpau lib32-libvdpau"
             else
                 # Detect GPU and choose driver
                 detect_gpu
@@ -87,8 +86,7 @@ install_packages() {
                          nvidia-settings opencl-nvidia lib32-opencl-nvidia \
                          libva-nvidia-driver libva-utils vdpauinfo \
                          vulkan-icd-loader lib32-vulkan-icd-loader \
-                         libvdpau lib32-libvdpau \
-                         cuda cuda-tools"
+                         libvdpau lib32-libvdpau"
             fi
             
             # Install packages

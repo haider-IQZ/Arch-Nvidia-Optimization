@@ -32,10 +32,7 @@ sudo pacman -S libva-nvidia-driver libva-utils vdpauinfo
 # Vulkan support (gaming)
 sudo pacman -S vulkan-icd-loader lib32-vulkan-icd-loader
 
-# Optional: CUDA support (for AI/ML workloads)
-sudo pacman -S cuda cuda-tools
-
-# Optional: Video acceleration
+# Video acceleration
 sudo pacman -S libvdpau lib32-libvdpau
 ```
 
@@ -53,12 +50,11 @@ sudo pacman -S libva-nvidia-driver libva-utils vdpauinfo
 # Vulkan support (gaming)
 sudo pacman -S vulkan-icd-loader lib32-vulkan-icd-loader
 
-# Optional: CUDA support (for AI/ML workloads)
-sudo pacman -S cuda cuda-tools
-
-# Optional: Video acceleration
+# Video acceleration
 sudo pacman -S libvdpau lib32-libvdpau
 ```
+
+**Note:** CUDA is intentionally excluded as it's large (~4GB), can conflict with other packages, and is only needed for AI/ML workloads. If you need CUDA, install it separately with `sudo pacman -S cuda cuda-tools`.
 
 **What each package does:**
 - `nvidia-settings` - GUI for NVIDIA configuration
@@ -66,7 +62,6 @@ sudo pacman -S libvdpau lib32-libvdpau
 - `libva-nvidia-driver` - Hardware video acceleration (VA-API)
 - `vdpauinfo` / `libvdpau` - Video decode acceleration (VDPAU)
 - `vulkan-icd-loader` - Vulkan API for gaming
-- `cuda` / `cuda-tools` - NVIDIA CUDA for AI/ML/compute (large download, optional)
 
 ### 2. Clone and Run the Installer
 ```bash
