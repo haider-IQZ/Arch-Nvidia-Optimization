@@ -16,17 +16,57 @@ Based on PikaOS NVIDIA optimizations for Wayland compositors
 
 **The installer script handles everything automatically!**
 
-### 1. Install NVIDIA Drivers (if not already installed)
+### 1. Install NVIDIA Drivers and All Dependencies
 
 **For newer GPUs (RTX 20 series and newer - RECOMMENDED):**
 ```bash
+# Core drivers
 sudo pacman -S nvidia-open-dkms nvidia-utils lib32-nvidia-utils
+
+# Additional packages for full functionality
+sudo pacman -S nvidia-settings opencl-nvidia lib32-opencl-nvidia
+
+# Video encoding/decoding support
+sudo pacman -S libva-nvidia-driver libva-utils vdpauinfo
+
+# Vulkan support (gaming)
+sudo pacman -S vulkan-icd-loader lib32-vulkan-icd-loader
+
+# Optional: CUDA support (for AI/ML workloads)
+sudo pacman -S cuda cuda-tools
+
+# Optional: Video acceleration
+sudo pacman -S libvdpau lib32-libvdpau
 ```
 
 **For older GPUs (GTX 10 series and older):**
 ```bash
+# Core drivers
 sudo pacman -S nvidia-dkms nvidia-utils lib32-nvidia-utils
+
+# Additional packages for full functionality
+sudo pacman -S nvidia-settings opencl-nvidia lib32-opencl-nvidia
+
+# Video encoding/decoding support
+sudo pacman -S libva-nvidia-driver libva-utils vdpauinfo
+
+# Vulkan support (gaming)
+sudo pacman -S vulkan-icd-loader lib32-vulkan-icd-loader
+
+# Optional: CUDA support (for AI/ML workloads)
+sudo pacman -S cuda cuda-tools
+
+# Optional: Video acceleration
+sudo pacman -S libvdpau lib32-libvdpau
 ```
+
+**What each package does:**
+- `nvidia-settings` - GUI for NVIDIA configuration
+- `opencl-nvidia` / `lib32-opencl-nvidia` - OpenCL support for compute tasks
+- `libva-nvidia-driver` - Hardware video acceleration (VA-API)
+- `vdpauinfo` / `libvdpau` - Video decode acceleration (VDPAU)
+- `vulkan-icd-loader` - Vulkan API for gaming
+- `cuda` / `cuda-tools` - NVIDIA CUDA for AI/ML/compute (large download, optional)
 
 ### 2. Clone and Run the Installer
 ```bash
@@ -109,6 +149,59 @@ reboot
 - `__GL_YIELD=USLEEP` - Better CPU usage when waiting for GPU
 - `__EGL_VENDOR_LIBRARY_FILENAMES` - EGL vendor library path
 
+## Additional Performance Tweaks (Optional)
+
+### Disable Nouveau (Blacklist Open-Source Driver)
+If you're having conflicts, ensure nouveau is disabled:
+```bash
+echo "blacklist nouveau" | sudo tee /etc/modprobe.d/blacklist-nouveau.conf
+sudo mkinitcpio -P
+```
+
+### Enable Early KMS (Kernel Mode Setting)
+Add NVIDIA modules to initramfs for early loading:
+```bash
+sudo nano /etc/mkinitcpio.conf
+# Add to MODULES: nvidia nvidia_modeset nvidia_uvm nvidia_drm
+# Example: MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)
+sudo mkinitcpio -P
+```
+
+### Pacman Hook for Automatic Driver Updates
+Create a hook to rebuild initramfs when NVIDIA drivers update:
+```bash
+sudo mkdir -p /etc/pacman.d/hooks
+sudo nano /etc/pacman.d/hooks/nvidia.hook
+```
+
+Add this content:
+```
+[Trigger]
+Operation=Install
+Operation=Upgrade
+Operation=Remove
+Type=Package
+Target=nvidia-open-dkms
+Target=linux
+
+[Action]
+Description=Update NVIDIA module in initcpio
+Depends=mkinitcpio
+When=PostTransaction
+NeedsTargets
+Exec=/bin/sh -c 'while read -r trg; do case $trg in linux*) exit 0; esac; done; /usr/bin/mkinitcpio -P'
+```
+
+### Gaming-Specific Optimizations
+For better gaming performance:
+```bash
+# Enable threaded optimization (add to env vars)
+export __GL_THREADED_OPTIMIZATIONS=1
+
+# Disable compositing in games (if using KDE/GNOME)
+export __GL_SYNC_TO_VBLANK=0  # Only for fullscreen games
+```
+
 ## Verification
 
 Check if kernel parameters are loaded:
@@ -125,6 +218,18 @@ env | grep -E "(NVIDIA|GL|GBM|LIBVA|VDPAU)"
 Check NVIDIA driver info:
 ```bash
 nvidia-smi
+
+# Check video acceleration
+vainfo  # Should show NVIDIA VA-API driver
+vdpauinfo  # Should show NVIDIA VDPAU driver
+
+# Check Vulkan
+vulkaninfo | grep -i nvidia
+```
+
+Check if modules are loaded:
+```bash
+lsmod | grep nvidia
 ```
 
 ## Troubleshooting
