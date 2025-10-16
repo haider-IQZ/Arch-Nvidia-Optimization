@@ -14,63 +14,9 @@ Based on PikaOS NVIDIA optimizations for Wayland compositors
 
 ## Quick Installation (Recommended)
 
-**The installer script handles everything automatically!**
+**The installer script handles EVERYTHING automatically - just run it!**
 
-### 1. Install NVIDIA Drivers and All Dependencies
-
-**For newer GPUs (RTX 20 series and newer - RECOMMENDED):**
-```bash
-# Core drivers
-sudo pacman -S nvidia-open-dkms nvidia-utils lib32-nvidia-utils
-
-# Additional packages for full functionality
-sudo pacman -S nvidia-settings opencl-nvidia lib32-opencl-nvidia
-
-# Video encoding/decoding support
-sudo pacman -S libva-nvidia-driver libva-utils vdpauinfo
-
-# Vulkan support (gaming)
-sudo pacman -S vulkan-icd-loader lib32-vulkan-icd-loader
-
-# Video acceleration
-sudo pacman -S libvdpau lib32-libvdpau
-
-# Wayland EGL support
-sudo pacman -S egl-wayland
-```
-
-**For older GPUs (GTX 10 series and older):**
-```bash
-# Core drivers
-sudo pacman -S nvidia-dkms nvidia-utils lib32-nvidia-utils
-
-# Additional packages for full functionality
-sudo pacman -S nvidia-settings opencl-nvidia lib32-opencl-nvidia
-
-# Video encoding/decoding support
-sudo pacman -S libva-nvidia-driver libva-utils vdpauinfo
-
-# Vulkan support (gaming)
-sudo pacman -S vulkan-icd-loader lib32-vulkan-icd-loader
-
-# Video acceleration
-sudo pacman -S libvdpau lib32-libvdpau
-
-# Wayland EGL support
-sudo pacman -S egl-wayland
-```
-
-**Note:** CUDA is intentionally excluded as it's large (~4GB), can conflict with other packages, and is only needed for AI/ML workloads. If you need CUDA, install it separately with `sudo pacman -S cuda cuda-tools`.
-
-**What each package does:**
-- `nvidia-settings` - GUI for NVIDIA configuration
-- `opencl-nvidia` / `lib32-opencl-nvidia` - OpenCL support for compute tasks
-- `libva-nvidia-driver` - Hardware video acceleration (VA-API)
-- `vdpauinfo` / `libvdpau` - Video decode acceleration (VDPAU)
-- `vulkan-icd-loader` - Vulkan API for gaming
-- `egl-wayland` - EGL external platform for Wayland (essential for Wayland compositors)
-
-### 2. Clone and Run the Installer
+### Clone and Run the Installer
 ```bash
 git clone https://github.com/haider-IQZ/Arch-Nvidia-Optimization.git
 cd Arch-Nvidia-Optimization
@@ -78,14 +24,36 @@ chmod +x install.sh
 ./install.sh
 ```
 
-The installer will:
-- ✅ Copy kernel module parameters to `/etc/modprobe.d/`
-- ✅ Regenerate initramfs automatically
-- ✅ Install compositor configuration (Hyprland/Niri)
-- ✅ Offer to reboot when done
+### What the Installer Does:
 
-### 3. Reboot
-The installer will ask if you want to reboot. Say yes!
+**Step 1: Package Installation**
+- Detects your GPU automatically (RTX 20+ vs older)
+- Offers two modes:
+  - **Full Installation**: Installs all packages automatically
+  - **Custom Installation**: Lets you choose what to install
+- Packages installed:
+  - NVIDIA drivers (nvidia-open-dkms or nvidia-dkms)
+  - 32-bit support (lib32-nvidia-utils)
+  - NVIDIA Settings GUI
+  - OpenCL support
+  - Video acceleration (VA-API/VDPAU)
+  - Vulkan (gaming)
+  - Wayland EGL support
+
+**Step 2: Kernel Optimization**
+- Copies optimized kernel module parameters
+- Regenerates initramfs automatically
+- Enables max performance, VRR/G-SYNC, better power management
+
+**Step 3: Compositor Configuration**
+- For Hyprland: Installs environment variables automatically
+- For Niri: Provides instructions (manual merge needed)
+- Sets up all Wayland/NVIDIA environment variables
+
+**Step 4: Reboot**
+- Offers to reboot automatically when done
+
+That's it! One command, fully optimized NVIDIA setup. 🚀
 
 ---
 
@@ -93,13 +61,33 @@ The installer will ask if you want to reboot. Say yes!
 
 If you prefer to install manually or want to customize:
 
-### 1. Apply Kernel Module Parameters
+### 1. Install NVIDIA Packages
+
+**For newer GPUs (RTX 20+ series):**
+```bash
+sudo pacman -S nvidia-open-dkms nvidia-utils lib32-nvidia-utils \
+               nvidia-settings opencl-nvidia lib32-opencl-nvidia \
+               libva-nvidia-driver libva-utils vdpauinfo \
+               vulkan-icd-loader lib32-vulkan-icd-loader \
+               libvdpau lib32-libvdpau egl-wayland
+```
+
+**For older GPUs (GTX 10 series and older):**
+```bash
+sudo pacman -S nvidia-dkms nvidia-utils lib32-nvidia-utils \
+               nvidia-settings opencl-nvidia lib32-opencl-nvidia \
+               libva-nvidia-driver libva-utils vdpauinfo \
+               vulkan-icd-loader lib32-vulkan-icd-loader \
+               libvdpau lib32-libvdpau egl-wayland
+```
+
+### 2. Apply Kernel Module Parameters
 ```bash
 sudo cp nvidia.conf /etc/modprobe.d/nvidia.conf
 sudo mkinitcpio -P
 ```
 
-### 2. Configure Your Wayland Compositor
+### 3. Configure Your Wayland Compositor
 
 #### For Hyprland:
 ```bash
@@ -114,7 +102,7 @@ Copy the `environment` block from `niri-example-env.kdl` to your `~/.config/niri
 #### For Sway/River/Other:
 Add the environment variables from `shell-env-vars.sh` to your shell profile or compositor config.
 
-### 3. Reboot
+### 4. Reboot
 ```bash
 reboot
 ```
