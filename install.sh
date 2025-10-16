@@ -45,14 +45,10 @@ install_packages() {
     echo ""
     
     # Check if drivers already installed
+    DRIVERS_INSTALLED=false
     if command -v nvidia-smi &> /dev/null; then
-        echo "NVIDIA drivers already installed."
-        read -p "Reinstall/upgrade packages? (y/N): " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            echo "Skipping package installation."
-            return
-        fi
+        echo "✓ NVIDIA drivers already detected!"
+        DRIVERS_INSTALLED=true
     fi
     
     echo "Choose installation mode:"
@@ -66,26 +62,37 @@ install_packages() {
             echo ""
             echo "Installing ALL NVIDIA packages..."
             
-            # Detect GPU and choose driver
-            detect_gpu
-            GPU_TYPE=$?
-            
-            if [ $GPU_TYPE -eq 0 ]; then
-                DRIVER="nvidia-open-dkms"
+            # Determine which driver to use
+            if [ "$DRIVERS_INSTALLED" = true ]; then
+                echo "Drivers already installed, installing additional packages only..."
+                PACKAGES="nvidia-settings opencl-nvidia lib32-opencl-nvidia \
+                         libva-nvidia-driver libva-utils vdpauinfo \
+                         vulkan-icd-loader lib32-vulkan-icd-loader \
+                         libvdpau lib32-libvdpau \
+                         cuda cuda-tools"
             else
-                DRIVER="nvidia-dkms"
+                # Detect GPU and choose driver
+                detect_gpu
+                GPU_TYPE=$?
+                
+                if [ $GPU_TYPE -eq 0 ]; then
+                    DRIVER="nvidia-open-dkms"
+                else
+                    DRIVER="nvidia-dkms"
+                fi
+                
+                echo "Using driver: $DRIVER"
+                
+                PACKAGES="$DRIVER nvidia-utils lib32-nvidia-utils \
+                         nvidia-settings opencl-nvidia lib32-opencl-nvidia \
+                         libva-nvidia-driver libva-utils vdpauinfo \
+                         vulkan-icd-loader lib32-vulkan-icd-loader \
+                         libvdpau lib32-libvdpau \
+                         cuda cuda-tools"
             fi
             
-            echo "Using driver: $DRIVER"
-            
-            # Install everything
-            sudo pacman -S --needed \
-                $DRIVER nvidia-utils lib32-nvidia-utils \
-                nvidia-settings opencl-nvidia lib32-opencl-nvidia \
-                libva-nvidia-driver libva-utils vdpauinfo \
-                vulkan-icd-loader lib32-vulkan-icd-loader \
-                libvdpau lib32-libvdpau \
-                cuda cuda-tools
+            # Install packages
+            sudo pacman -S --needed $PACKAGES
             
             echo "✓ All packages installed"
             ;;
@@ -95,29 +102,34 @@ install_packages() {
             echo "Custom installation mode"
             echo ""
             
-            # Detect GPU and choose driver
-            detect_gpu
-            GPU_TYPE=$?
-            
-            if [ $GPU_TYPE -eq 0 ]; then
-                DRIVER="nvidia-open-dkms"
-            elif [ $GPU_TYPE -eq 1 ]; then
-                DRIVER="nvidia-dkms"
-            else
-                echo "Choose driver:"
-                echo "1) nvidia-open-dkms (RTX 20+ series)"
-                echo "2) nvidia-dkms (GTX 10 series and older)"
-                read -p "Enter choice (1-2): " driver_choice
-                if [ "$driver_choice" = "1" ]; then
+            # Install drivers if not already installed
+            if [ "$DRIVERS_INSTALLED" = false ]; then
+                # Detect GPU and choose driver
+                detect_gpu
+                GPU_TYPE=$?
+                
+                if [ $GPU_TYPE -eq 0 ]; then
                     DRIVER="nvidia-open-dkms"
-                else
+                elif [ $GPU_TYPE -eq 1 ]; then
                     DRIVER="nvidia-dkms"
+                else
+                    echo "Choose driver:"
+                    echo "1) nvidia-open-dkms (RTX 20+ series)"
+                    echo "2) nvidia-dkms (GTX 10 series and older)"
+                    read -p "Enter choice (1-2): " driver_choice
+                    if [ "$driver_choice" = "1" ]; then
+                        DRIVER="nvidia-open-dkms"
+                    else
+                        DRIVER="nvidia-dkms"
+                    fi
                 fi
+                
+                # Core drivers (mandatory)
+                echo "Installing core drivers..."
+                sudo pacman -S --needed $DRIVER nvidia-utils lib32-nvidia-utils
+            else
+                echo "✓ Drivers already installed, skipping driver installation"
             fi
-            
-            # Core drivers (mandatory)
-            echo "Installing core drivers..."
-            sudo pacman -S --needed $DRIVER nvidia-utils lib32-nvidia-utils
             
             # NVIDIA Settings
             read -p "Install nvidia-settings (GUI configuration tool)? (Y/n): " -n 1 -r
