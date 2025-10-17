@@ -1,119 +1,43 @@
-# Arch Linux NVIDIA Optimization Guide
-Based on PikaOS NVIDIA optimizations for Wayland compositors
+# Arch Linux NVIDIA Optimization for Hyprland
+Based on PikaOS NVIDIA optimizations
 
 ## What This Does
-- Enables maximum performance mode for NVIDIA GPU
-- Optimizes power management and memory allocation
-- Configures proper Wayland/NVIDIA environment variables
-- Improves gaming and desktop performance
+- Configures proper NVIDIA environment variables for Hyprland
+- Optimizes kernel module parameters for better performance
+- Enables VRR/G-SYNC, max performance mode, and better power management
 
 ## Requirements
-- Arch Linux
-- NVIDIA GPU (RTX 20 series or newer recommended)
-- NVIDIA proprietary drivers installed (`nvidia` or `nvidia-dkms`)
+- Arch Linux with Hyprland
+- NVIDIA drivers already installed (`nvidia-open-dkms` or `nvidia-dkms`)
 
-## Quick Installation (Recommended)
+## Installation
 
-**The installer script handles EVERYTHING automatically - just run it!**
+### 1. Apply Kernel Module Parameters
 
-### Clone and Run the Installer
-```bash
-git clone https://github.com/haider-IQZ/Arch-Nvidia-Optimization.git
-cd Arch-Nvidia-Optimization
-chmod +x install.sh
-./install.sh
-```
-
-### What the Installer Does:
-
-**Step 1: Package Installation**
-- Detects your GPU automatically (RTX 20+ vs older)
-- Offers two modes:
-  - **Full Installation**: Installs all packages automatically
-  - **Custom Installation**: Lets you choose what to install
-- Packages installed:
-  - NVIDIA drivers (nvidia-open-dkms or nvidia-dkms)
-  - 32-bit support (lib32-nvidia-utils)
-  - NVIDIA Settings GUI
-  - OpenCL support
-  - Video acceleration (VA-API/VDPAU)
-  - Vulkan (gaming)
-  - Wayland EGL support
-
-**Step 2: Kernel Optimization**
-- Copies optimized kernel module parameters
-- Regenerates initramfs automatically
-- Enables max performance, VRR/G-SYNC, better power management
-
-**Step 3: Compositor Configuration**
-- For Hyprland: Installs environment variables automatically
-- For Niri: Provides instructions (manual merge needed)
-- Sets up all Wayland/NVIDIA environment variables
-
-**Step 4: Reboot**
-- Offers to reboot automatically when done
-
-That's it! One command, fully optimized NVIDIA setup. 🚀
-
----
-
-## Manual Installation (Advanced)
-
-If you prefer to install manually or want to customize:
-
-### 1. Install NVIDIA Packages
-
-**For newer GPUs (RTX 20+ series):**
-```bash
-sudo pacman -S nvidia-open-dkms nvidia-utils lib32-nvidia-utils \
-               nvidia-settings opencl-nvidia lib32-opencl-nvidia \
-               libva-nvidia-driver libva-utils vdpauinfo \
-               vulkan-icd-loader lib32-vulkan-icd-loader \
-               libvdpau lib32-libvdpau egl-wayland
-```
-
-**For older GPUs (GTX 10 series and older):**
-```bash
-sudo pacman -S nvidia-dkms nvidia-utils lib32-nvidia-utils \
-               nvidia-settings opencl-nvidia lib32-opencl-nvidia \
-               libva-nvidia-driver libva-utils vdpauinfo \
-               vulkan-icd-loader lib32-vulkan-icd-loader \
-               libvdpau lib32-libvdpau egl-wayland
-```
-
-### 2. Apply Kernel Module Parameters
+Copy the optimized kernel parameters:
 ```bash
 sudo cp nvidia.conf /etc/modprobe.d/nvidia.conf
 sudo mkinitcpio -P
 ```
 
-### 3. Configure Your Wayland Compositor
+### 2. Configure Hyprland Environment Variables
 
-#### For Hyprland:
+Copy the environment variables to your Hyprland config:
 ```bash
 cp hyprland-nvidia-env.conf ~/.config/hypr/env.conf
 ```
 
 Or if you already have `env.conf`, append the contents to your existing file.
 
-#### For Niri:
-Copy the `environment` block from `niri-example-env.kdl` to your `~/.config/niri/config.kdl`
-
-#### For Sway/River/Other:
-Add the environment variables from `shell-env-vars.sh` to your shell profile or compositor config.
-
-### 4. Reboot
+### 3. Reboot
 ```bash
 reboot
 ```
 
 ## Files Included
 
-- `nvidia.conf` - Kernel module parameters for optimal NVIDIA performance
+- `nvidia.conf` - Kernel module parameters
 - `hyprland-nvidia-env.conf` - Hyprland environment variables
-- `niri-config.kdl` - Example Niri config with NVIDIA env vars
-- `shell-env-vars.sh` - Environment variables for shell profiles
-- `README.md` - This file
 
 ## What Each Kernel Parameter Does
 
@@ -139,109 +63,20 @@ reboot
 - `__GL_YIELD=USLEEP` - Better CPU usage when waiting for GPU
 - `__EGL_VENDOR_LIBRARY_FILENAMES` - EGL vendor library path
 
-## Additional Performance Tweaks (Optional)
-
-### Disable Nouveau (Blacklist Open-Source Driver)
-If you're having conflicts, ensure nouveau is disabled:
-```bash
-echo "blacklist nouveau" | sudo tee /etc/modprobe.d/blacklist-nouveau.conf
-sudo mkinitcpio -P
-```
-
-### Enable Early KMS (Kernel Mode Setting)
-Add NVIDIA modules to initramfs for early loading:
-```bash
-sudo nano /etc/mkinitcpio.conf
-# Add to MODULES: nvidia nvidia_modeset nvidia_uvm nvidia_drm
-# Example: MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)
-sudo mkinitcpio -P
-```
-
-### Pacman Hook for Automatic Driver Updates
-Create a hook to rebuild initramfs when NVIDIA drivers update:
-```bash
-sudo mkdir -p /etc/pacman.d/hooks
-sudo nano /etc/pacman.d/hooks/nvidia.hook
-```
-
-Add this content:
-```
-[Trigger]
-Operation=Install
-Operation=Upgrade
-Operation=Remove
-Type=Package
-Target=nvidia-open-dkms
-Target=linux
-
-[Action]
-Description=Update NVIDIA module in initcpio
-Depends=mkinitcpio
-When=PostTransaction
-NeedsTargets
-Exec=/bin/sh -c 'while read -r trg; do case $trg in linux*) exit 0; esac; done; /usr/bin/mkinitcpio -P'
-```
-
-### Gaming-Specific Optimizations
-For better gaming performance:
-```bash
-# Enable threaded optimization (add to env vars)
-export __GL_THREADED_OPTIMIZATIONS=1
-
-# Disable compositing in games (if using KDE/GNOME)
-export __GL_SYNC_TO_VBLANK=0  # Only for fullscreen games
-```
-
 ## Verification
 
-Check if kernel parameters are loaded:
+Check if everything is working:
 ```bash
-cat /proc/cmdline
-systool -m nvidia_drm -av | grep modeset
-```
+# Check NVIDIA driver
+nvidia-smi
 
-Check environment variables (in Wayland session):
-```bash
+# Check environment variables in Hyprland
 env | grep -E "(NVIDIA|GL|GBM|LIBVA|VDPAU)"
 ```
 
-Check NVIDIA driver info:
-```bash
-nvidia-smi
-
-# Check video acceleration
-vainfo  # Should show NVIDIA VA-API driver
-vdpauinfo  # Should show NVIDIA VDPAU driver
-
-# Check Vulkan
-vulkaninfo | grep -i nvidia
-```
-
-Check if modules are loaded:
-```bash
-lsmod | grep nvidia
-```
-
-## Troubleshooting
-
-### Black screen after reboot
-- Boot into recovery mode
-- Remove `/etc/modprobe.d/nvidia.conf`
-- Run `sudo mkinitcpio -P`
-- Reboot
-
-### Performance issues
-- Make sure you're using the proprietary NVIDIA drivers, not nouveau
-- Check `nvidia-smi` to verify GPU is running at full power
-- Verify environment variables are set in your Wayland session
-
-### Suspend/resume issues
-- Try removing `NVreg_PreserveVideoMemoryAllocations=1` from nvidia.conf
-- Regenerate initramfs and reboot
-
 ## Credits
-Based on PikaOS NVIDIA optimizations by the PikaOS team.
-Adapted for Arch Linux.
+
+Based on PikaOS NVIDIA optimizations.
 
 ## License
 Public Domain / CC0 - Do whatever you want with it.
